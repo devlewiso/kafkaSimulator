@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1DMPKTVWND"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-1DMPKTVWND');
+    </script>
     <!-- METADATOS SEO Y MULTILENGUAJE -->
     <title id="app-title">Simulador Interactivo de Apache Kafka</title>
     <meta name="description" content="Simulación interactiva y animada para entender el flujo de datos en Apache Kafka: Productores, Brokers, Particiones y Consumidores.">
@@ -334,7 +343,7 @@
                 partitionTitle: "P{id} (Partição {id})",
                 lastOffset: "Último Offset:",
 
-                // 3. Consumer
+                // 3. Consumidor
                 consumerGroupTitle: "3. Grupo de Consumidores",
                 consumerGroupDesc: "Cada consumidor lê de uma partição diferente dentro do grupo.",
                 consumerTitle: "Consumidor {name} (Lê P{id})",
@@ -343,7 +352,7 @@
                 consumeButton: "Consumir (P{id})",
                 noNewMessages: "Nenhuma mensagem nova.",
 
-                // 4. Explanation
+                // 4. Explicación
                 explanationTitle: "4. Finalidade do Kafka e Fluxo Pós-Consumo",
                 purposeTitle: "Qual é a finalidade do Kafka?",
                 purposeDesc: "O principal objetivo do Kafka é **desacoplar** a produção de dados do consumo, atuando como uma **plataforma de streaming de eventos** de alta disponibilidade. Permite que múltiplos sistemas leiam os mesmos dados sem se afetarem e garante que os dados sejam tratados em tempo real e em grande escala.",
