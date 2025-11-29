@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- METADATOS SEO Y MULTILENGUAJE -->
+    <title id="app-title">Simulador Interactivo de Apache Kafka</title>
+    <meta name="description" content="Simulación interactiva y animada para entender el flujo de datos en Apache Kafka: Productores, Brokers, Particiones y Consumidores.">
+    <meta name="keywords" content="Kafka, Simulador, Tutorial, Streaming de eventos, Apache Kafka, Productor, Consumidor, Broker, Partición, Microservicios">
+    <meta name="author" content="Gemini Model">
+    <meta name="language" content="Spanish, English, Portuguese">
+    <!-- FIN METADATOS SEO -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-producer: #10b981; /* Esmeralda 500 */
+            --color-broker: #3b82f6; /* Azul 500 */
+            --color-consumer: #f59e0b; /* Ámbar 500 */
+            --color-message: #ef4444; /* Rojo 500 */
+            --color-explanation: #6366f1; /* Índigo 500 */
+            --color-bg: #f8fafc; /* Slate 50 */
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--color-bg); }
+
+        .concept-box {
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .producer { border: 2px solid var(--color-producer); background-color: #ecfdf5; }
+        .broker { border: 2px solid var(--color-broker); background-color: #eff6ff; }
+        .consumer { border: 2px solid var(--color-consumer); background-color: #fffbeb; }
+        
+        .explanation-box {
+            border: 2px solid var(--color-explanation);
+            background-color: #eef2ff; /* Índigo 50 */
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .partition-list {
+            min-height: 100px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        .message-item {
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.25rem;
+            background-color: #f3f4f6; /* Gris 200 */
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Animation Styles --- */
+        .message-animation {
+            position: fixed;
+            width: 30px;
+            height: 30px;
+            background-color: var(--color-message);
+            border-radius: 50%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.75rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <header class="text-center mb-8">
+        <h1 id="header-title" class="text-4xl font-extrabold text-gray-800">Simulador Interactivo de Apache Kafka</h1>
+        <p id="header-subtitle" class="text-xl text-gray-600 mt-2">Visualiza la producción, almacenamiento y consumo de mensajes.</p>
+        
+        <div class="mt-4 flex justify-center items-center">
+            <label for="language-select" class="text-gray-600 mr-2" id="lang-label">Idioma:</label>
+            <select id="language-select" onchange="setLanguage(this.value)" class="p-2 border rounded-lg shadow-sm">
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="pt">Português</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="space-y-8">
+        <!-- Contenedor Principal Flex para grandes pantallas -->
+        <div class="lg:flex lg:space-x-8">
+
+            <!-- 1. PRODUCTOR -->
+            <div id="producer-box" class="concept-box producer lg:w-1/4 mb-8 lg:mb-0">
+                <h2 id="producer-title" class="text-2xl font-bold text-gray-900 flex items-center mb-4">
+                    <svg class="w-6 h-6 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2-3 .895-3 2 1.343 2 3 2m-3-2v4m-2-4h4m-2 4h4m-1.5 6h-3M12 6V4"></path></svg>
+                    1. Productor
+                </h2>
+                <p id="producer-desc" class="text-gray-700 mb-4">El productor crea y envía un mensaje a un Tópico (sin saber a qué partición irá).</p>
+                <input type="text" id="message-input" placeholder="Escribe tu mensaje..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-4 focus:ring-green-500/50 focus:border-green-500 mb-4">
+                <button id="send-button" onclick="sendMessage()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">
+                    Enviar Mensaje (Producir)
+                </button>
+            </div>
+
+            <!-- 2. BROKER (Tópico y Particiones) -->
+            <div id="broker-box" class="concept-box broker lg:w-2/4 mb-8 lg:mb-0">
+                <h2 id="broker-title" class="text-2xl font-bold text-gray-900 flex items-center mb-4">
+                    <svg class="w-6 h-6 mr-2 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10m-4-10h18.89a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V7z"></path></svg>
+                    2. Broker / Tópico: "log-de-eventos"
+                </h2>
+                <p id="broker-desc" class="text-gray-700 mb-4">Los mensajes se almacenan de forma inmutable y ordenada en Particiones. Aquí se simulan 3 Particiones para el Tópico.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Partición 0 -->
+                    <div>
+                        <h3 class="font-semibold text-lg text-gray-800" id="partition-0-title">P0 (Partición 0)</h3>
+                        <div id="partition-0" class="partition-list"></div>
+                        <div class="text-sm mt-1 text-gray-600"><span id="p0-offset-label">Último Offset:</span> <span id="p0-offset">0</span></div>
+                    </div>
+                    <!-- Partición 1 -->
+                    <div>
+                        <h3 class="font-semibold text-lg text-gray-800" id="partition-1-title">P1 (Partición 1)</h3>
+                        <div id="partition-1" class="partition-list"></div>
+                        <div class="text-sm mt-1 text-gray-600"><span id="p1-offset-label">Último Offset:</span> <span id="p1-offset">0</span></div>
+                    </div>
+                    <!-- Partición 2 -->
+                    <div>
+                        <h3 class="font-semibold text-lg text-gray-800" id="partition-2-title">P2 (Partición 2)</h3>
+                        <div id="partition-2" class="partition-list"></div>
+                        <div class="text-sm mt-1 text-gray-600"><span id="p2-offset-label">Último Offset:</span> <span id="p2-offset">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. GRUPO DE CONSUMIDORES -->
+            <div class="lg:w-1/4">
+                <div id="consumer-group-box" class="concept-box consumer">
+                    <h2 id="consumer-group-title" class="text-2xl font-bold text-gray-900 flex items-center mb-4">
+                        <svg class="w-6 h-6 mr-2 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v4m0 0v-4m-6 4h12"></path></svg>
+                        3. Grupo de Consumidores
+                    </h2>
+                    <p id="consumer-group-desc" class="text-gray-700 mb-4">Cada consumidor lee de una partición diferente dentro del grupo.</p>
+
+                    <div class="space-y-4">
+                        <!-- Consumidor 1 -->
+                        <div id="consumer-0" class="p-3 bg-yellow-50 rounded-lg shadow-sm">
+                            <h3 class="font-semibold text-lg text-yellow-800" id="consumer-0-title">Consumidor A (Lee P0)</h3>
+                            <p class="text-sm text-gray-700"><span id="c0-offset-label">Offset (P0):</span> <span id="c0-offset" class="font-bold">0</span></p>
+                            <div class="mt-2 text-sm"><span id="c0-message-label">Último mensaje:</span> <span id="c0-message" class="font-mono bg-yellow-200 px-1 rounded">Ninguno</span></div>
+                            <button id="c0-button" onclick="consumeMessage(0)" class="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Consumir (P0)</button>
+                        </div>
+                        <!-- Consumidor 2 -->
+                        <div id="consumer-1" class="p-3 bg-yellow-50 rounded-lg shadow-sm">
+                            <h3 class="font-semibold text-lg text-yellow-800" id="consumer-1-title">Consumidor B (Lee P1)</h3>
+                            <p class="text-sm text-gray-700"><span id="c1-offset-label">Offset (P1):</span> <span id="c1-offset" class="font-bold">0</span></p>
+                            <div class="mt-2 text-sm"><span id="c1-message-label">Último mensaje:</span> <span id="c1-message" class="font-mono bg-yellow-200 px-1 rounded">Ninguno</span></div>
+                            <button id="c1-button" onclick="consumeMessage(1)" class="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Consumir (P1)</button>
+                        </div>
+                        <!-- Consumidor 3 -->
+                        <div id="consumer-2" class="p-3 bg-yellow-50 rounded-lg shadow-sm">
+                            <h3 class="font-semibold text-lg text-yellow-800" id="consumer-2-title">Consumidor C (Lee P2)</h3>
+                            <p class="text-sm text-gray-700"><span id="c2-offset-label">Offset (P2):</span> <span id="c2-offset" class="font-bold">0</span></p>
+                            <div class="mt-2 text-sm"><span id="c2-message-label">Último mensaje:</span> <span id="c2-message" class="font-mono bg-yellow-200 px-1 rounded">Ninguno</span></div>
+                            <button id="c2-button" onclick="consumeMessage(2)" class="mt-2 w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg text-sm">Consumir (P2)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de Explicación -->
+        <div class="explanation-box">
+            <h2 id="explanation-title" class="text-2xl font-bold text-gray-900 flex items-center mb-4">
+                <svg class="w-6 h-6 mr-2 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                4. Finalidad de Kafka y Flujo Post-Consumo
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Finalidad -->
+                <div>
+                    <h3 id="purpose-title" class="font-semibold text-xl text-indigo-800 mb-2">¿Cuál es la finalidad de Kafka?</h3>
+                    <p id="purpose-desc" class="text-gray-700">La meta principal de Kafka es **desacoplar** la producción de datos de su consumo, actuando como una **plataforma de streaming de eventos** de alta disponibilidad. Permite que múltiples sistemas lean los mismos datos sin afectarse mutuamente y asegura que la data se maneje en tiempo real y a gran escala.</p>
+                    <ul class="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
+                        <li id="purpose-li-1">**Retención de Datos:** El broker retiene los mensajes por un tiempo (simulado por no eliminarlos).</li>
+                        <li id="purpose-li-2">**Escalabilidad:** Las particiones permiten dividir la carga de trabajo.</li>
+                        <li id="purpose-li-3">**Replayability:** Los consumidores pueden volver a leer mensajes viejos si es necesario (cambiando su Offset).</li>
+                    </ul>
+                </div>
+
+                <!-- Post-Consumidor -->
+                <div>
+                    <h3 id="post-consumer-title" class="font-semibold text-xl text-indigo-800 mb-2">¿Qué pasa después del Consumidor?</h3>
+                    <p id="post-consumer-desc" class="text-gray-700">Una vez que un consumidor lee y procesa un mensaje, este se convierte en el inicio de la **lógica de negocio**. El consumidor actúa como un **microservicio** que reacciona al evento. Las acciones típicas incluyen:</p>
+                    <ul class="list-disc list-inside text-sm text-gray-600 mt-2 space-y-1">
+                        <li id="post-consumer-li-1">**Persistencia (Guardar):** Guardar el evento en una base de datos (e.g., un clic de usuario en una DB analítica).</li>
+                        <li id="post-consumer-li-2">**Transformación/Reenvío:** Crear un nuevo evento basado en el actual y publicarlo en otro tópico de Kafka (Flujo de Eventos).</li>
+                        <li id="post-consumer-li-3">**Acción Externa (Reacción):** Enviar un correo electrónico, una notificación push o activar un proceso de pago.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Área para la animación del mensaje -->
+    <div id="message-anim" class="message-animation"></div>
+
+    <script>
+        // --- 1. CONFIGURACIÓN DE IDIOMAS (I18N) ---
+        const MESSAGES = {
+            es: {
+                // Generales
+                appTitle: "Simulador Interactivo de Apache Kafka",
+                headerSubtitle: "Visualiza la producción, almacenamiento y consumo de mensajes.",
+                langLabel: "Idioma:",
+                none: "Ninguno",
+                awaiting: "En espera...",
+                
+                // 1. Productor
+                producerTitle: "1. Productor",
+                producerDesc: "El productor crea y envía un mensaje a un Tópico (sin saber a qué partición irá).",
+                messageInputPlaceholder: "Escribe tu mensaje...",
+                sendButton: "Enviar Mensaje (Producir)",
+                
+                // 2. Broker
+                brokerTitle: '2. Broker / Tópico: "log-de-eventos"',
+                brokerDesc: "Los mensajes se almacenan de forma inmutable y ordenada en Particiones. Aquí se simulan 3 Particiones para el Tópico.",
+                partitionTitle: "P{id} (Partición {id})",
+                lastOffset: "Último Offset:",
+                
+                // 3. Consumidor
+                consumerGroupTitle: "3. Grupo de Consumidores",
+                consumerGroupDesc: "Cada consumidor lee de una partición diferente dentro del grupo.",
+                consumerTitle: "Consumidor {name} (Lee P{id})",
+                offsetLabel: "Offset (P{id}):",
+                lastMessageLabel: "Último mensaje:",
+                consumeButton: "Consumir (P{id})",
+                noNewMessages: "No hay mensajes nuevos.",
+                
+                // 4. Explicación
+                explanationTitle: "4. Finalidad de Kafka y Flujo Post-Consumo",
+                purposeTitle: "¿Cuál es la finalidad de Kafka?",
+                purposeDesc: "La meta principal de Kafka es **desacoplar** la producción de datos de su consumo, actuando como una **plataforma de streaming de eventos** de alta disponibilidad. Permite que múltiples sistemas lean los mismos datos sin afectarse mutuamente y asegura que la data se maneje en tiempo real y a gran escala.",
+                purposeLi1: "**Retención de Datos:** El broker retiene los mensajes por un tiempo (simulado por no eliminarlos).",
+                purposeLi2: "**Escalabilidad:** Las particiones permiten dividir la carga de trabajo.",
+                purposeLi3: "**Replayability:** Los consumidores pueden volver a leer mensajes viejos si es necesario (cambiando su Offset).",
+                postConsumerTitle: "¿Qué pasa después del Consumidor?",
+                postConsumerDesc: "Una vez que un consumidor lee y procesa un mensaje, este se convierte en el inicio de la **lógica de negocio**. El consumidor actúa como un **microservicio** que reacciona al evento. Las acciones típicas incluyen:",
+                postConsumerLi1: "**Persistencia (Guardar):** Guardar el evento en una base de datos (e.g., un clic de usuario en una DB analítica).",
+                postConsumerLi2: "**Transformación/Reenvío:** Crear un nuevo evento basado en el actual y publicarlo en otro tópico de Kafka (Flujo de Eventos).",
+                postConsumerLi3: "**Acción Externa (Reacción):** Enviar un correo electrónico, una notificación push o activar un proceso de pago.",
+                
+                // Console Log
+                logNoNewMessages: "Consumidor {id} (P{pId}): No hay mensajes nuevos en el Offset {offset}.",
+                logPostConsume: "*** POST-CONSUMO: El Consumidor {id} ha procesado el evento \"{text}\" y ahora activaría una función de negocio (ej. guardar en DB o enviar email)."
+            },
+            en: {
+                // Generals
+                appTitle: "Interactive Apache Kafka Simulator",
+                headerSubtitle: "Visualize the production, storage, and consumption of messages.",
+                langLabel: "Language:",
+                none: "None",
+                awaiting: "Awaiting...",
+
+                // 1. Producer
+                producerTitle: "1. Producer",
+                producerDesc: "The producer creates and sends a message to a Topic (without knowing which partition it will go to).",
+                messageInputPlaceholder: "Type your message...",
+                sendButton: "Send Message (Produce)",
+
+                // 2. Broker
+                brokerTitle: '2. Broker / Topic: "event-log"',
+                brokerDesc: "Messages are stored immutably and in order within Partitions. 3 Partitions are simulated for the Topic here.",
+                partitionTitle: "P{id} (Partition {id})",
+                lastOffset: "Last Offset:",
+
+                // 3. Consumer
+                consumerGroupTitle: "3. Consumer Group",
+                consumerGroupDesc: "Each consumer reads from a different partition within the group.",
+                consumerTitle: "Consumer {name} (Reads P{id})",
+                offsetLabel: "Offset (P{id}):",
+                lastMessageLabel: "Last message:",
+                consumeButton: "Consume (P{id})",
+                noNewMessages: "No new messages.",
+
+                // 4. Explanation
+                explanationTitle: "4. Purpose of Kafka and Post-Consumption Flow",
+                purposeTitle: "What is the purpose of Kafka?",
+                purposeDesc: "The main goal of Kafka is to **decouple** data production from consumption, acting as a highly available **event streaming platform**. It allows multiple systems to read the same data without affecting each other and ensures data is handled in real-time and at large scale.",
+                purposeLi1: "**Data Retention:** The broker retains messages for a period (simulated by not deleting them).",
+                purposeLi2: "**Scalability:** Partitions allow the workload to be divided.",
+                purposeLi3: "**Replayability:** Consumers can re-read old messages if necessary (by changing their Offset).",
+                postConsumerTitle: "What happens after the Consumer?",
+                postConsumerDesc: "Once a consumer reads and processes a message, it becomes the trigger for the **business logic**. The consumer acts as a **microservice** that reacts to the event. Typical actions include:",
+                postConsumerLi1: "**Persistence (Save):** Saving the event to a database (e.g., a user click in an analytical DB).",
+                postConsumerLi2: "**Transformation/Forwarding:** Creating a new event based on the current one and publishing it to another Kafka topic (Event Flow).",
+                postConsumerLi3: "**External Action (Reaction):** Sending an email, a push notification, or triggering a payment process.",
+
+                // Console Log
+                logNoNewMessages: "Consumer {id} (P{pId}): No new messages at Offset {offset}.",
+                logPostConsume: "*** POST-CONSUMPTION: Consumer {id} has processed the event \"{text}\" and would now trigger a business function (e.g., save to DB or send email)."
+            },
+            pt: {
+                // Generals
+                appTitle: "Simulador Interativo Apache Kafka",
+                headerSubtitle: "Visualize a produção, armazenamento e consumo de mensagens.",
+                langLabel: "Idioma:",
+                none: "Nenhum",
+                awaiting: "Aguardando...",
+
+                // 1. Producer
+                producerTitle: "1. Produtor",
+                producerDesc: "O produtor cria e envia uma mensagem para um Tópico (sem saber para qual partição irá).",
+                messageInputPlaceholder: "Digite sua mensagem...",
+                sendButton: "Enviar Mensagem (Produzir)",
+
+                // 2. Broker
+                brokerTitle: '2. Broker / Tópico: "registro-de-eventos"',
+                brokerDesc: "As mensagens são armazenadas de forma imutável e ordenada em Partições. 3 Partições são simuladas para o Tópico aqui.",
+                partitionTitle: "P{id} (Partição {id})",
+                lastOffset: "Último Offset:",
+
+                // 3. Consumer
+                consumerGroupTitle: "3. Grupo de Consumidores",
+                consumerGroupDesc: "Cada consumidor lê de uma partição diferente dentro do grupo.",
+                consumerTitle: "Consumidor {name} (Lê P{id})",
+                offsetLabel: "Offset (P{id}):",
+                lastMessageLabel: "Última mensagem:",
+                consumeButton: "Consumir (P{id})",
+                noNewMessages: "Nenhuma mensagem nova.",
+
+                // 4. Explanation
+                explanationTitle: "4. Finalidade do Kafka e Fluxo Pós-Consumo",
+                purposeTitle: "Qual é a finalidade do Kafka?",
+                purposeDesc: "O principal objetivo do Kafka é **desacoplar** a produção de dados do consumo, atuando como uma **plataforma de streaming de eventos** de alta disponibilidade. Permite que múltiplos sistemas leiam os mesmos dados sem se afetarem e garante que os dados sejam tratados em tempo real e em grande escala.",
+                purposeLi1: "**Retenção de Dados:** O broker retém as mensagens por um período (simulado por não excluí-las).",
+                purposeLi2: "**Escalabilidade:** As partições permitem dividir a carga de trabalho.",
+                purposeLi3: "**Replayability:** Os consumidores podem reler mensagens antigas, se necessário (alterando seu Offset).",
+                postConsumerTitle: "O que acontece depois do Consumidor?",
+                postConsumerDesc: "Uma vez que um consumidor lê e processa uma mensagem, isso se torna o gatilho para a **lógica de negócio**. O consumidor atua como um **microsserviço** que reage ao evento. Ações típicas incluem:",
+                postConsumerLi1: "**Persistência (Salvar):** Salvar o evento em um banco de dados (ex: um clique do usuário em um DB analítico).",
+                postConsumerLi2: "**Transformação/Reenvio:** Criar um novo evento baseado no atual e publicá-lo em outro tópico do Kafka (Fluxo de Eventos).",
+                postConsumerLi3: "**Ação Externa (Reação):** Enviar um e-mail, uma notificação push ou acionar um processo de pagamento.",
+
+                // Console Log
+                logNoNewMessages: "Consumidor {id} (P{pId}): Não há mensagens novas no Offset {offset}.",
+                logPostConsume: "*** PÓS-CONSUMO: O Consumidor {id} processou o evento \"{text}\" e agora acionaria uma função de negócio (ex: salvar no BD ou enviar email)."
+            }
+        };
+
+        let currentLang = 'es'; // Default language
+
+        function getMsg(key, replacements = {}) {
+            let message = MESSAGES[currentLang][key] || MESSAGES['es'][key] || key;
+            for (const [placeholder, value] of Object.entries(replacements)) {
+                message = message.replace(`{${placeholder}}`, value);
+            }
+            return message;
+        }
+        
+        // Función para cambiar el idioma y actualizar la interfaz
+        function setLanguage(lang) {
+            currentLang = lang;
+            
+            // Actualizar Title y Metadata
+            document.getElementById('app-title').textContent = getMsg('appTitle');
+            document.querySelector('meta[name="description"]').setAttribute('content', getMsg('headerSubtitle'));
+            document.documentElement.lang = lang;
+            
+            // 1. Header
+            document.getElementById('header-title').textContent = getMsg('appTitle');
+            document.getElementById('header-subtitle').textContent = getMsg('headerSubtitle');
+            document.getElementById('lang-label').textContent = getMsg('langLabel');
+
+            // 2. Productor
+            document.getElementById('producer-title').innerHTML = `<svg class="w-6 h-6 mr-2 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2-3 .895-3 2 1.343 2 3 2m-3-2v4m-2-4h4m-2 4h4m-1.5 6h-3M12 6V4"></path></svg>${getMsg('producerTitle')}`;
+            document.getElementById('producer-desc').textContent = getMsg('producerDesc');
+            document.getElementById('message-input').placeholder = getMsg('messageInputPlaceholder');
+            document.getElementById('send-button').textContent = getMsg('sendButton');
+
+            // 3. Broker
+            document.getElementById('broker-title').innerHTML = `<svg class="w-6 h-6 mr-2 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10m-4-10h18.89a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V7z"></path></svg>${getMsg('brokerTitle')}`;
+            document.getElementById('broker-desc').textContent = getMsg('brokerDesc');
+            
+            // Particiones
+            for(let i=0; i<NUM_PARTITIONS; i++) {
+                document.getElementById(`partition-${i}-title`).textContent = getMsg('partitionTitle', {id: i});
+                document.getElementById(`p${i}-offset-label`).textContent = getMsg('lastOffset');
+            }
+
+            // 4. Consumidor
+            const consumerNames = ['A', 'B', 'C'];
+            document.getElementById('consumer-group-title').innerHTML = `<svg class="w-6 h-6 mr-2 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14v4m0 0v-4m-6 4h12"></path></svg>${getMsg('consumerGroupTitle')}`;
+            document.getElementById('consumer-group-desc').textContent = getMsg('consumerGroupDesc');
+
+            for(let i=0; i<NUM_PARTITIONS; i++) {
+                document.getElementById(`consumer-${i}-title`).textContent = getMsg('consumerTitle', {name: consumerNames[i], id: i});
+                document.getElementById(`c${i}-offset-label`).textContent = getMsg('offsetLabel', {id: i});
+                document.getElementById(`c${i}-message-label`).textContent = getMsg('lastMessageLabel');
+                document.getElementById(`c${i}-message`).textContent = consumerMessageDisplays[i].dataset.lastMessage || getMsg('none');
+                document.getElementById(`c${i}-button`).textContent = getMsg('consumeButton', {id: i});
+            }
+
+            // 5. Explicación
+            document.getElementById('explanation-title').innerHTML = `<svg class="w-6 h-6 mr-2 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${getMsg('explanationTitle')}`;
+            document.getElementById('purpose-title').textContent = getMsg('purposeTitle');
+            document.getElementById('purpose-desc').innerHTML = getMsg('purposeDesc');
+            document.getElementById('purpose-li-1').innerHTML = getMsg('purposeLi1');
+            document.getElementById('purpose-li-2').innerHTML = getMsg('purposeLi2');
+            document.getElementById('purpose-li-3').innerHTML = getMsg('purposeLi3');
+            document.getElementById('post-consumer-title').textContent = getMsg('postConsumerTitle');
+            document.getElementById('post-consumer-desc').innerHTML = getMsg('postConsumerDesc');
+            document.getElementById('post-consumer-li-1').innerHTML = getMsg('postConsumerLi1');
+            document.getElementById('post-consumer-li-2').innerHTML = getMsg('postConsumerLi2');
+            document.getElementById('post-consumer-li-3').innerHTML = getMsg('postConsumerLi3');
+
+            // Asegurarse de que el input de mensaje mantenga el placeholder correcto
+            const currentPlaceholder = document.getElementById('message-input').placeholder;
+            if (currentPlaceholder !== getMsg('messageInputPlaceholder') && currentPlaceholder !== MESSAGES[currentLang]['awaiting']) {
+                document.getElementById('message-input').placeholder = getMsg('messageInputPlaceholder');
+            }
+
+            renderPartitions();
+        }
+
+        // --- 2. LÓGICA DE KAFKA SIMULADA ---
+        const NUM_PARTITIONS = 3;
+        const KAFKA_LOGS = Array.from({ length: NUM_PARTITIONS }, () => []); // Array de arrays (logs de particiones)
+        let partitionIndex = 0; // Para round-robin (asignación simple)
+
+        // Estado del Consumidor: Registra el offset actual de cada consumidor en su respectiva partición.
+        const CONSUMER_OFFSETS = [0, 0, 0]; // Consumidor 0 -> P0, Consumidor 1 -> P1, Consumidor 2 -> P2
+        const CONSUMER_PARTITIONS = [0, 1, 2]; // Mapeo fijo para simplicidad
+
+        // Referencias del DOM (mantenidas para la lógica)
+        const messageInput = document.getElementById('message-input');
+        const messageAnim = document.getElementById('message-anim');
+        const producerBox = document.getElementById('producer-box');
+        const brokerBox = document.getElementById('broker-box');
+        const partitionElements = [
+            document.getElementById('partition-0'),
+            document.getElementById('partition-1'),
+            document.getElementById('partition-2'),
+        ];
+        const consumerBoxes = [
+            document.getElementById('consumer-0'),
+            document.getElementById('consumer-1'),
+            document.getElementById('consumer-2'),
+        ];
+        const offsetDisplays = [
+            document.getElementById('p0-offset'),
+            document.getElementById('p1-offset'),
+            document.getElementById('p2-offset'),
+        ];
+        const consumerOffsetDisplays = [
+            document.getElementById('c0-offset'),
+            document.getElementById('c1-offset'),
+            document.getElementById('c2-offset'),
+        ];
+        const consumerMessageDisplays = [
+            document.getElementById('c0-message'),
+            document.getElementById('c1-message'),
+            document.getElementById('c2-message'),
+        ];
+
+        /**
+         * Calcula las coordenadas de un elemento del DOM.
+         * @param {HTMLElement} element
+         */
+        function getElementCoords(element) {
+            const rect = element.getBoundingClientRect();
+            return {
+                x: rect.left + window.scrollX + rect.width / 2,
+                y: rect.top + window.scrollY + rect.height / 2
+            };
+        }
+
+        /**
+         * Renderiza el estado actual de todas las particiones.
+         */
+        function renderPartitions() {
+            KAFKA_LOGS.forEach((log, index) => {
+                const partitionDiv = partitionElements[index];
+                partitionDiv.innerHTML = '';
+                log.forEach((msg, offset) => {
+                    const consumerOffset = CONSUMER_OFFSETS[index];
+                    const isConsumed = offset < consumerOffset;
+                    const isNextToConsume = offset === consumerOffset;
+
+                    const item = document.createElement('div');
+                    item.className = 'message-item ' + (isConsumed ? 'opacity-50 line-through' : (isNextToConsume ? 'bg-blue-200 border border-blue-400 font-semibold' : ''));
+                    item.innerHTML = `
+                        <span class="truncate">${msg.text}</span>
+                        <span class="text-xs text-gray-500">${offset}</span>
+                    `;
+                    partitionDiv.appendChild(item);
+                });
+                // Actualiza el último offset (tamaño del log)
+                offsetDisplays[index].textContent = log.length;
+            });
+        }
+
+        /**
+         * Simula el envío de un mensaje por el Productor.
+         */
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (!messageText) {
+                messageInput.placeholder = getMsg('messageInputPlaceholder');
+                messageInput.focus();
+                return;
+            }
+
+            // 1. Lógica del Productor: Asignación simple (Round-Robin)
+            const targetPartition = partitionIndex;
+            const messageId = KAFKA_LOGS[targetPartition].length; // El offset es el ID del mensaje
+            partitionIndex = (partitionIndex + 1) % NUM_PARTITIONS; // Siguiente partición
+
+            const messagePayload = { id: messageId, text: messageText };
+            messageInput.value = ''; // Limpiar input
+
+            const sendButton = document.getElementById('send-button');
+            sendButton.disabled = true;
+
+            // 2. Animación de Producción
+            const producerCoords = getElementCoords(producerBox);
+            const brokerCoords = getElementCoords(brokerBox);
+            const targetPartitionEl = partitionElements[targetPartition].parentNode; // El div padre de la lista
+
+            messageAnim.textContent = 'Msg';
+            messageAnim.style.opacity = 1;
+            messageAnim.style.left = `${producerCoords.x - 15}px`;
+            messageAnim.style.top = `${producerCoords.y - 15}px`;
+
+            // Mover a la posición del Broker
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    messageAnim.style.left = `${brokerCoords.x - 15}px`;
+                    messageAnim.style.top = `${brokerCoords.y - 15}px`;
+                    resolve();
+                }, 300);
+            });
+
+            // Mover a la posición de la Partición específica
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    const targetCoords = getElementCoords(targetPartitionEl);
+                    messageAnim.style.left = `${targetCoords.x - 15}px`;
+                    messageAnim.style.top = `${targetCoords.y - 15}px`;
+                    resolve();
+                }, 300);
+            });
+
+            // 3. Almacenamiento en el Log
+            setTimeout(() => {
+                KAFKA_LOGS[targetPartition].push(messagePayload);
+                renderPartitions();
+                messageAnim.style.opacity = 0; // Ocultar animación
+                sendButton.disabled = false;
+            }, 300);
+
+            console.log(getMsg('logNoNewMessages', {id: 'PROD', pId: targetPartition, offset: messageId}));
+        }
+
+        /**
+         * Simula el consumo de un mensaje por un Consumidor.
+         * @param {number} consumerId - Índice del consumidor (0, 1, 2)
+         */
+        async function consumeMessage(consumerId) {
+            const partitionId = CONSUMER_PARTITIONS[consumerId];
+            const currentOffset = CONSUMER_OFFSETS[consumerId];
+            const partitionLog = KAFKA_LOGS[partitionId];
+
+            if (currentOffset >= partitionLog.length) {
+                // No hay mensajes nuevos
+                console.log(getMsg('logNoNewMessages', {id: consumerId, pId: partitionId, offset: currentOffset}));
+                consumerMessageDisplays[consumerId].textContent = getMsg('awaiting');
+                return;
+            }
+
+            // Mensaje a consumir
+            const messagePayload = partitionLog[currentOffset];
+            const consumeButton = consumerBoxes[consumerId].querySelector('button');
+            consumeButton.disabled = true;
+
+            // 1. Animación de Consumo: Ubicar el mensaje en la partición (visual)
+            const partitionDiv = partitionElements[partitionId];
+            const messageItem = partitionDiv.children[currentOffset];
+            const messageItemRect = messageItem ? messageItem.getBoundingClientRect() : null;
+
+            if (!messageItemRect) {
+                 // Esto no debería pasar si el currentOffset es válido
+                 console.error("Error visual: Mensaje no encontrado para animación.");
+                 consumeButton.disabled = false;
+                 return;
+            }
+
+            const messageItemCoords = {
+                x: messageItemRect.left + window.scrollX + messageItemRect.width / 2,
+                y: messageItemRect.top + window.scrollY + messageItemRect.height / 2
+            };
+            const consumerCoords = getElementCoords(consumerBoxes[consumerId]);
+
+            // Crear y mover bloque de animación
+            messageAnim.textContent = messagePayload.id;
+            messageAnim.style.opacity = 1;
+            messageAnim.style.left = `${messageItemCoords.x - 15}px`;
+            messageAnim.style.top = `${messageItemCoords.y - 15}px`;
+
+            // Mover al Consumidor
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    messageAnim.style.left = `${consumerCoords.x - 15}px`;
+                    messageAnim.style.top = `${consumerCoords.y - 15}px`;
+                    if (messageItem) {
+                        messageItem.classList.add('bg-green-300', 'border-green-600'); // Resaltar mientras se consume
+                    }
+                    resolve();
+                }, 300);
+            });
+
+            // 2. Lógica del Consumidor: Confirmar el Offset
+            setTimeout(() => {
+                // *** 4. LÓGICA POST-CONSUMO (simulada) ***
+                console.log(getMsg('logPostConsume', {id: consumerId, text: messagePayload.text}));
+                
+                // Almacenar el último mensaje en un dataset para I18n
+                consumerMessageDisplays[consumerId].dataset.lastMessage = messagePayload.text;
+
+                // Actualizar la interfaz del Consumidor
+                consumerMessageDisplays[consumerId].textContent = messagePayload.text;
+                
+                // Actualizar el Offset
+                CONSUMER_OFFSETS[consumerId]++;
+                consumerOffsetDisplays[consumerId].textContent = CONSUMER_OFFSETS[consumerId];
+
+                // Renderizar para mostrar el mensaje como "consumido" (opaco/tachado)
+                renderPartitions();
+                
+                // Finalizar animación
+                messageAnim.style.opacity = 0;
+                consumeButton.disabled = false;
+                
+                console.log(getMsg('logNoNewMessages', {id: consumerId, pId: partitionId, offset: currentOffset}));
+            }, 300);
+        }
+
+        /**
+         * Determina el idioma inicial basado en la configuración del navegador.
+         */
+        function initializeLanguage() {
+            const browserLang = navigator.language.split('-')[0].toLowerCase();
+            const supportedLangs = ['es', 'en', 'pt'];
+            const initialLang = supportedLangs.includes(browserLang) ? browserLang : 'es';
+            
+            document.getElementById('language-select').value = initialLang;
+            setLanguage(initialLang);
+        }
+
+        // Inicializar la interfaz al cargar
+        window.onload = initializeLanguage;
+    </script>
+</body>
+</html>
